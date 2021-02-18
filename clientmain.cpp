@@ -40,7 +40,6 @@ int main(int argc, char *argv[])
     perror("Port missing");
     exit(1);
   }
-  //int port = atoi(Destport);
 
   #ifdef DEBUG 
   printf("Host %s, and port %d.\n", Desthost, port);
@@ -69,7 +68,7 @@ int main(int argc, char *argv[])
 
   for(p = servinfo; p != NULL; p = p->ai_next) 
   {
-    if ((sockfd = socket(p->ai_family, SOCK_DGRAM | SOCK_CLOEXEC/*p->ai_socktype*/, IPPROTO_UDP /*p->ai_protocol*/)) == -1) 
+    if ((sockfd = socket(p->ai_family, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP) == -1) 
     {
       perror("failed to bind to socket");
       continue;
@@ -97,7 +96,6 @@ int main(int argc, char *argv[])
         perror("Invalid message or reciever");
         exit(1);
       }
-      else printf("message sent, awaiting response..\n");
 
       if ((sent_bytes = recvfrom(sockfd, &calc_protocol, sizeof(calc_protocol), 0, servinfo->ai_addr, &servinfo->ai_addrlen)) == -1)
       {    
@@ -107,9 +105,7 @@ int main(int argc, char *argv[])
       {
         if (sent_bytes == sizeof(calc_protocol))
         {
-          printf("Information recieved..\n");
           communication_complete = true;
-          
           i = 5;
           break;
         }
@@ -133,11 +129,9 @@ int main(int argc, char *argv[])
 
   addr_length = sizeof(client_addr);
 
-  int port = atoi(Destport);
-
+  getsockname(sockfd, (struct sockaddr *) &client_addr, &addr_length);
+  printf("Host %s, and port %d\n", Desthost, Desthost);
   #ifdef DEBUG
-    getsockname(sockfd, (struct sockaddr *) &client_addr, &addr_length);
-    printf("Host %s, and porta %d\n", Destport, port);
     printf("Communicating with: %s:%s | local: %s:%d\n", Desthost, Destport, inet_ntoa(client_addr.sin_addr), (int)ntohs(client_addr.sin_port));
   #endif
 
@@ -205,7 +199,10 @@ int main(int argc, char *argv[])
       else if (strcmp(command, "fmul")==0)  fresult=f1*f2;
       else if (strcmp(command, "fdiv")==0)  fresult=f1/f2;
 
-      printf("Result: %8.8g \n", fresult);
+  #ifdef DEBUG
+    printf("Calculated result: %8.8g\n", fresult);
+  #endif
+
       calc_protocol.flResult = fresult;
     } 
     else 
@@ -220,7 +217,10 @@ int main(int argc, char *argv[])
       else if (strcmp(command, "mul")==0) iresult=i1*i2;
       else if (strcmp(command, "div")==0) iresult=i1/i2;
 
-      printf("Result: %d \n", iresult);
+  #ifdef DEBUG
+    printf("Calculated result: %d\n", iresult);
+  #endif
+
       calc_protocol.inResult = htonl(iresult);
     }
   }
@@ -237,8 +237,7 @@ int main(int argc, char *argv[])
     else
     {
       if (is_float) printf("Result sent: %8.8g \n", calc_protocol.flResult); 
-      else printf("Result sent: %d \n", ntohl(calc_protocol.inResult)); 
-      printf("message sent, awaiting response..\n");
+      else printf("My result: %d \n", ntohl(calc_protocol.inResult)); 
     }
       
     if ((sent_bytes = recvfrom(sockfd, &calc_message, sizeof(calc_message), 0, servinfo->ai_addr, &servinfo->ai_addrlen)) == -1)
@@ -249,7 +248,6 @@ int main(int argc, char *argv[])
     {
       if (sent_bytes == sizeof(calc_message))
       {
-        printf("Information recieved..\n");
         if(ntohl(calc_message.message) == 1)
         {
           printf("Server: OK\n");
