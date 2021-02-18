@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
     calc_message.type = htons(22);
     calc_message.message = htonl(0);
-    calc_message.protocol = htons(123);//17);
+    calc_message.protocol = htons(17);
     calc_message.major_version = htons(1);
     calc_message.minor_version = htons(0);
 
@@ -98,9 +98,6 @@ int main(int argc, char *argv[])
         exit(1);
       }
       else printf("message sent, awaiting response..\n");
-
-
-    
 
       if ((sent_bytes = recvfrom(sockfd, &calc_protocol, sizeof(calc_protocol), 0, servinfo->ai_addr, &servinfo->ai_addrlen)) == -1)
       {    
@@ -131,7 +128,18 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
-  
+  struct sockaddr_in client_addr;
+  socklen_t addr_length;
+
+  addr_length = sizeof(client_addr);
+
+  int port = atoi(Destport);
+
+  #ifdef DEBUG
+    getsockname(sockfd, (struct sockaddr *) &client_addr, &addr_length);
+    printf("Host %s, and porta %d\n", Destport, port);
+    printf("Communicating with: %s:%s | local: %s:%d\n", Desthost, Destport, inet_ntoa(client_addr.sin_addr), (int)ntohs(client_addr.sin_port));
+  #endif
 
   //Operators for incoming data stream
   bool is_float = false;
